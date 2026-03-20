@@ -3,6 +3,7 @@
 #include<glm/gtc/type_ptr.hpp>
 #include"Math.h"
 #include<iostream>
+#include <iomanip>
 
 RigidBody::RigidBody()
 {
@@ -28,9 +29,7 @@ void RigidBody::setPhysics(float mass, std::vector<glm::vec3> points)
 void RigidBody::clearForces()
 {
 	this->netForce = glm::vec3(0.0f);
-	this->torque = glm::vec3(0.0f);
-	this->netImpulse = glm::vec3(0.0f);
-	this->angularImpulse = glm::vec3(0.0f);
+	this->netTorque = glm::vec3(0.0f);
 }
 void RigidBody::addForce(glm::vec3 force)
 {
@@ -39,35 +38,30 @@ void RigidBody::addForce(glm::vec3 force)
 void RigidBody::addForce(glm::vec3 point, glm::vec3 force)
 {
 	addForce(force);
-	this->torque += glm::cross(point - center, force);
+	this->netTorque += glm::cross(point - center, force);
 }
-void RigidBody::addImpulse(glm::vec3 point, glm::vec3 impulse)
+void RigidBody::applyImpulse(glm::vec3 point, glm::vec3 impulse)
 {
-	this->netImpulse += impulse ;
-	this->angularImpulse += cross(point - center, impulse);
-	//this->velocity += inverseMass * impulse;
-	//this->angularImpulse += getInverseInersia() * cross(point - center, impulse);
+	this->velocity += inverseMass * impulse;
+	this->angularVelocity += getInverseInersia() * cross(point - center, impulse);
 }
-void RigidBody::push(glm::vec3 point, glm::vec3 vec)
+void RigidBody::addTorque(glm::vec3 torque)
 {
-	this->center += inverseMass * vec;
-	Quaternion nextRot((rotation * inverseInersia) * glm::cross(point - center, vec));
-	this->rotation = rotation * nextRot;
-	
+	this->netTorque += torque;
 }
+
 glm::vec3 RigidBody::worldSpace(glm::vec3 point)
 {
-	//return movement * glm::vec4(rotation * point, 1.0f);
-	return (rotation * point) + center;
+	return (rotation * point) + center ;
 }
 glm::vec3 RigidBody::getVelocity(glm::vec3 point)
 {
 	//in world-sapce
-	return velocity + glm::cross(angularVelocity, point-center);
+	return velocity  + glm::cross(angularVelocity , point-center);
 }
+
 glm::vec3 RigidBody::impulseImpact(glm::vec3 point, glm::vec3 impulse)
 {
-	//glm::vec3 unitImpulse = glm::normalize(impulse);
 	glm::vec3 resAngular = glm::cross(getInverseInersia() * glm::cross(point - center, impulse), point - center);
 	return  (impulse * inverseMass) + resAngular;
 }
@@ -100,22 +94,27 @@ glm::mat3 RigidBody::getInverseInersia()
 	return rotation * (rotation.inverse() * inverseInersia);
 }
 
-void RigidBody::Integrate(float t)
+void RigidBody::Integrate(float deltaTime)
 {
-	//Integrate velocities
-	this->velocity = velocity * drag + inverseMass * netForce * t;
-	this->angularVelocity = angularVelocity * angularDrag + getInverseInersia() * torque * t;
-	//apply impulses
-	this->velocity += inverseMass * netImpulse;
-	this->angularVelocity += getInverseInersia() * angularImpulse;
-	
-	//Intergrate positions
-	Quaternion nextRot(angularVelocity * 0.5f);
-	this->center += velocity * t;
-	this->rotation = nextRot * rotation;
+	//update inersia according to rotation
+	inverseInersia = getInverseInersia();
 
+	//Integrate acceleration
+	this->acceleration = netForce * inverseMass;
+	this->angularAcceleration = inverseInersia * netTorque ;
+	
+	//Integrate velocities
+	this->velocity = velocity + acceleration * deltaTime;
+	this->angularVelocity = angularVelocity + angularAcceleration * deltaTime;
+
+	//Intergrate positions
+	Quaternion nextRot(angularVelocity * deltaTime);
+	this->center += velocity * deltaTime;
+	this->rotation = nextRot * rotation;
+	
+	
 	//update matrix
-	movement = glm::translate(glm::mat4(1.0f), center);
+	movement = glm::translate(glm::mat4(1.0f), center );
 	rotationMatrix = rotation.getMatrix();
 	
 	//reset forces for next update

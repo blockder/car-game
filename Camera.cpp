@@ -34,7 +34,7 @@ void Camera::updateMovement(GLFWwindow* window)
 {
 	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
 		return;
-	float speed = 0.05f;
+	float speed = 0.25f;
 	//update movement
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
 	{
@@ -82,10 +82,13 @@ void Camera::updateMovement(GLFWwindow* window)
 }
 void Camera::updateMovement(Car& car)
 {
-	//update Direction
-	direction = glm::normalize(car.getDirection() + glm::vec3(0, -0.2f, 0.0f));
-
 	//update location
-	glm::vec3 carLoc = car.worldSpace(glm::vec3(0,0,0));
-	loc = carLoc + glm::vec3(0, 1.0f, 0) - direction * 1.0f;
+	loc = car.center + glm::vec3(0, 2.0f, 0) - direction * 2.0f;
+
+	if (!car.onGround)
+		return;
+	//update Direction
+	glm::vec3 carDirection = car.rotation * glm::vec3(0, 0, 1); carDirection.y = 0;
+	direction = carDirection + glm::vec3(0, -0.2f, 0.0f);
+
 }

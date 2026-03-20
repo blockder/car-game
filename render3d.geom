@@ -18,7 +18,6 @@ in DATA
 void main()
 {
 	//calculate normal
-	vec3 normal = vec3(0,0,0);
 	vec3 vector0 = vec3(gl_in[2].gl_Position - gl_in[1].gl_Position);
 	vec3 vector1 = vec3(gl_in[0].gl_Position - gl_in[1].gl_Position);
 	normal = normalize(cross(vector0, vector1));

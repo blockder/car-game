@@ -10,5 +10,7 @@ uniform sampler2D texUnit;
 
 void main()
 {
-	FragColor = texture(texUnit, texCoord) * vec4(color, 1.0f);
+	vec3 lightPos = vec3(10,20,0);
+	float light = dot(normal, normalize(lightPos)) + 0.2f;
+	FragColor = texture(texUnit, texCoord) * vec4(color * light, 1.0f);
 }

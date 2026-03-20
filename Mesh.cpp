@@ -1,11 +1,11 @@
 #include"Mesh.h"
 #include"Vertex.h"
-#include"Shader.h"
 
 
 
 
-Mesh::Mesh(Texture texture)
+
+Mesh::Mesh()
 {
 	//create VAO, EBO and VBO
 	glCreateVertexArrays(1, &VAO);
@@ -13,7 +13,7 @@ Mesh::Mesh(Texture texture)
 	glCreateBuffers(1, &EBO);
 
 	//connect VBO and EBO to VAO
-	glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(Vertex));
+	glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(Vertex)); //connects VBO to slot 0 in VAO
 	glVertexArrayElementBuffer(VAO, EBO);
 
 	//set layouts
@@ -31,27 +31,6 @@ Mesh::Mesh(Texture texture)
 	glVertexArrayAttribBinding(VAO, 1, 0);
 	glVertexArrayAttribBinding(VAO, 2, 0);
 
-	this->texture = texture;
-
 }
 
-void Mesh::draw(Shader& shaderProgram)
-{
-	shaderProgram.Active();
-	int textureUnit = 0;
-	//bind VAO and texture
-	glBindVertexArray(VAO);
-	glBindTextureUnit(textureUnit, texture.id);
-
-	//send texture to shader
-	glUniform1i(glGetUniformLocation(shaderProgram.id, "texUnit"), textureUnit);
-
-	//draw call
-	glDrawElements(GL_TRIANGLES, EBOsize, GL_UNSIGNED_INT, 0);
-
-	//unbind VAO and texture
-	glBindVertexArray(0);
-	glBindTextureUnit(textureUnit, 0);
-
-}
 

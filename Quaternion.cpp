@@ -9,25 +9,26 @@ Quaternion::Quaternion(glm::vec4 quaternion)
 }
 Quaternion::Quaternion(glm::vec3 axis, float angle)
 {
+	axis = glm::normalize(axis);
 	angle = glm::radians(angle);
 	this->quaternion.x = glm::cos(angle / 2);
 	this->quaternion.y = glm::sin(angle / 2) * axis.x;
 	this->quaternion.z = glm::sin(angle / 2) * axis.y;
 	this->quaternion.w = glm::sin(angle / 2) * axis.z;
 
-	this->quaternion = glm::normalize(quaternion);
 }
 Quaternion::Quaternion(glm::vec3 angularVelocity)
 {
 	glm::vec3 axis = angularVelocity;
-	float angle = glm::atan(glm::length(angularVelocity));
+	float angle = glm::length(angularVelocity);
+	if(glm::length(axis) != 0)
+		axis = glm::normalize(axis);
 
 	this->quaternion.x = glm::cos(angle / 2);
 	this->quaternion.y = glm::sin(angle / 2) * axis.x;
 	this->quaternion.z = glm::sin(angle / 2) * axis.y;
 	this->quaternion.w = glm::sin(angle / 2) * axis.z;
 
-	this->quaternion = glm::normalize(quaternion);
 }
 Quaternion Quaternion::operator*(Quaternion& other)
 {

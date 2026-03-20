@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\allon\OneDrive\Documents\Allon Derman\Car game\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\allon\OneDrive\Documents\Allon Derman\Car game\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\User\Documents\projects\Car game\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\User\Documents\projects\Car game\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\allon\OneDrive\Documents\Allon Derman\Car game\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\allon\OneDrive\Documents\Allon Derman\Car game\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Users\User\Documents\projects\Car game\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\User\Documents\projects\Car game\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -137,35 +137,33 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="Collision.cpp" />
-    <ClCompile Include="Cube.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Model.cpp" />
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="spring.cpp" />
+    <ClCompile Include="Spring.cpp" />
     <ClCompile Include="stb.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vertex.cpp" />
-    <ClCompile Include="Wall.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Block.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Car.h" />
     <ClInclude Include="Collision.h" />
-    <ClInclude Include="Cube.h" />
+    <ClInclude Include="Model.h" />
     <ClInclude Include="Quaternion.h" />
     <ClInclude Include="RigidBody.h" />
     <ClInclude Include="Math.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="spring.h" />
+    <ClInclude Include="Spring.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Vertex.h" />
-    <ClInclude Include="Wall.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="default.frag" />

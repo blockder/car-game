@@ -1,49 +1,35 @@
 #pragma once
 #include<glad/glad.h>
 #include<GLFW/glfw3.h>
-#include"Mesh.h"
+#include"Model.h"
 #include"Vertex.h"
 #include "RigidBody.h"
 
 class Camera;
 class Wall;
 
-class Car : public Mesh, public RigidBody
+class Car : public Model, public RigidBody
 {
 public:
-	Vertex p1;
-	Vertex p2;
-	Vertex p3;
-	Vertex p4;
-	Vertex p5;
-	Vertex p6;
-	Vertex p7;
-	Vertex p8;
+	float speed;
+	float tireFriction;
+	bool onGround;
 
-	glm::vec3 frontLeft;
-	glm::vec3 frontRight;
-	glm::vec3 backLeft;
-	glm::vec3 backRight;
-
-
-	Car(Texture texture, Vertex p1, Vertex p2, Vertex p3, Vertex p4, Vertex p5, Vertex p6, Vertex p7, Vertex p8);
+	Car(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices);
 	Car() = default;
 
-	using Mesh::draw;
+	using Model::draw;
 	void draw(Shader& shaderProgram, Camera& camera);
 
-	void update() override;
+	void movement(GLFWwindow* window, float deltaTime);
 
-	glm::vec3 getPoint(int triangle, int point);
-	glm::vec3 getPoint(int i);
-
-	void movement(GLFWwindow* window);
-
-	glm::vec3 getDirection();
 	void setDirection(glm::vec3 rot, float angle);
 
+	void applyFriction();
+
 private:
-	float turnAngle = glm::radians(12.0f);
-	float speed = 16.0f;
-	
+	float turnAngle = 4.0f;
+	float spinAngle = 5;
+	float drag;
+	float angularDrag;
 };

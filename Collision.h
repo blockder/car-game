@@ -4,8 +4,7 @@
 #include<iostream>
 
 class RigidBody;
-class Cube;
-class Wall;
+class Model;
 class Car;
 class Block;
 
@@ -15,11 +14,17 @@ struct Contact
 	RigidBody* other;
 	glm::vec3 point;
 	glm::vec3 normal;
-	float penetration;
+	float penetration; 
+	float accumulatedNormal;
+	glm::vec3 accumulatedSide;
 
 	Contact(RigidBody* body, RigidBody* other, glm::vec3 point, glm::vec3 normal, float penetration);
 
+	float getClosingVelocity();
+
 	void solveVelocity(float c, float u);
+
+	static std::vector<Contact> createContacts(Model* m, RigidBody* r, RigidBody* other, std::vector<glm::vec3> points);
 };
 
 class Collision
@@ -33,12 +38,17 @@ public:
 
 	static void penetrationResolver(std::vector<Contact>& contacts);
 
-	static std::vector<Contact> getContacts(Cube& cube, Wall& wall);
-
-	static std::vector<Contact> getContacts(Car& car, Wall& wall);
-
 	static std::vector<Contact> getContacts(Car& car, Block& block);
 
-	static glm::vec3 wheelContact(glm::vec3 wheel,glm::vec3 dir, Block& block);
+private:
+	static bool insideBlock(Car& car, Block& block, std::vector<Contact>& contacts);
+	static bool insideCar(Car& car, Block& block, std::vector<Contact>& contacts);
+	static bool Edges(Car& car, Block& block, std::vector<Contact>& contacts);
+	static bool faceEdges(Car& car, Block& blockm, std::vector<Contact>& contacts);
+	static glm::vec3 avaregeContact(std::vector<Contact>& contacts, glm::vec3 center);
+	static bool insideCar(Car& car, glm::vec3 point);
+	static bool insideBlock(Block& block, glm::vec3 point);
+	static float getMaxPenetration(std::vector<Contact>& contacts);
 	
+
 };

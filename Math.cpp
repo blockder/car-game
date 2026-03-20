@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include<iostream>
 #include<vector>
+#include<cmath>
 
 void Math::print(glm::vec4 vector)
 {
@@ -24,12 +25,21 @@ void Math::print(double num)
 {
 	std::cout << num << std::endl;
 }
+float Math::setPrecision(float num, int precision)
+{
+	int tens = std::pow(10, precision);
+	return std::round(num * tens) / tens;
+}
 glm::vec3 Math::getNormal(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3)
 {
 	return glm::normalize(glm::cross(t2 - t1, t3 - t1));
 }
 glm::vec3 Math::planeIntersetion(glm::vec3 planeN, glm::vec3 planeP, glm::vec3 vector, glm::vec3 vecLoc)
 {
+	//fail safe
+	if (glm::dot(planeN, vector) == 0)
+		return glm::vec3(0);
+
 	glm::vec3 intersectionPoint;
 	double t;
 	double topEquation = planeN.x * (planeP.x - vecLoc.x) + planeN.y * (planeP.y - vecLoc.y) + planeN.z * (planeP.z - vecLoc.z);
@@ -39,10 +49,30 @@ glm::vec3 Math::planeIntersetion(glm::vec3 planeN, glm::vec3 planeP, glm::vec3 v
 	intersectionPoint = vecLoc + vector * (float)t;
 	return intersectionPoint;
 }
+glm::vec3 Math::triangleIntersection(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3, glm::vec3 vector, glm::vec3 vecLoc)
+{
+	glm::vec3 inter = Math::planeIntersetion(getNormal(t1, t2, t3), t1, vector, vecLoc);
+	if (insideTriangle(t1, t2, t3, inter))
+		return inter;
+	return glm::vec3(0);
+}
 double Math::distaceLinePoint(glm::vec3 l1, glm::vec3 l2, glm::vec3 point)
 {
 	glm::vec3 v = l2 - l1;
 	return std::abs(glm::length(glm::cross(v, point - l1)) / glm::length(v));
+}
+bool Math::LinesIntersection(glm::vec3 l1, glm::vec3 l2, glm::vec3 k1, glm::vec3 k2, glm::vec3& inter)
+{
+	glm::vec3 up = glm::cross(l2 - l1, k2 - k1);
+	if (glm::length(up) < 0.01f)
+		return false;
+	glm::vec3 planeNormal = glm::cross(l2 - l1, up);
+	glm::vec3 SUSinter = planeIntersetion(planeNormal, l1, k2-k1, k1);
+	//check if inter inside line
+	if (glm::dot(k2-SUSinter, k1-SUSinter) > 0)
+		return false;
+	inter = SUSinter;
+	return true;
 }
 
 float Math::distanceTrianglePoint(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3, glm::vec3 point)
@@ -99,12 +129,13 @@ float Math::distanceTwoLine(glm::vec3 l1, glm::vec3 l2, glm::vec3 k1, glm::vec3 
 
 bool Math::insideTriangle(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3, glm::vec3 point)
 {
+	//works in 3d even when above triangle
 	glm::vec3 normal = getNormal(t1, t2, t3);
-	if (glm::dot(glm::cross(t3 - t1, point - t1), normal) < 0)
+	if (glm::dot(glm::cross(t2 - t1, point - t1), normal) < 0)
 		return false;
-	if (glm::dot(glm::cross(t1 - t2, point - t2), normal) < 0)
+	if (glm::dot(glm::cross(t1 - t3, point - t3), normal) < 0)
 		return false;
-	return glm::dot(glm::cross(t2 - t3, point - t3), normal) > 0;
+	return glm::dot(glm::cross(t3 - t2, point - t2), normal) > 0;
 }
 float Math::distanceTwoTriangles(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3, glm::vec3 T1, glm::vec3 T2, glm::vec3 T3, glm::vec3 velocity)
 {
@@ -143,5 +174,5 @@ bool Math::insidePlane(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3, glm::vec3 point
 {
 	//anti clockwise
 	glm::vec3 normal = getNormal(t1, t2, t3);
-	return glm::dot(point - t1, normal) < 0;
+	return glm::dot(point - t1, normal) <= 0;
 }

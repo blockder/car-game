@@ -2,23 +2,14 @@
 #include<glad/glad.h>
 #include"Texture.h"
 #include<glm/glm.hpp>
-
-class Shader;
+#include"Shader.h"
 
 class Mesh
 {
 public:
-	Texture texture;
-	int EBOsize;
-
-	Mesh(Texture texture);
-	Mesh() = default;
-
-	virtual void draw(Shader& shaderProgram);
-
-	virtual void update() = 0;
-
-
+	Mesh();
+	
+	virtual void draw(Shader& shaderProgram) = 0;
 
 protected:
 	GLuint VAO;
