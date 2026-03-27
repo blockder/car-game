@@ -17,18 +17,14 @@ Spring::Spring(float restingLength, float k, float dampingC, RigidBody* r1, Rigi
 	p2 = glm::vec3(0);
 	i1 = -1;
 	i2 = -1;
-	m1 = NULL;
-	m2 = NULL;
 	map = NULL;
 }
-void Spring::setP1(Model* m1, int i1)
+void Spring::setP1(int i1)
 {
-	this->m1 = m1;
 	this->i1 = i1;
 }
-void Spring::setP2(Model* m2, int i2)
+void Spring::setP2(int i2)
 {
-	this->m2 = m2;
 	this->i2 = i2;
 }
 void Spring::setMap(std::vector<Block>* map)
@@ -43,22 +39,24 @@ glm::vec3 Spring::projectSpring( glm::vec3 p)
 {
 	glm::vec3 projectedPoint = p + glm::vec3(0,-1,0) * (restingLength + 0.1f);
 	float minDistance = restingLength;
-	for (auto block : *map)
+	for (auto& block : *map)
 	{
-		for (int i = 0; i < block.Indices.size() / 3; i++)
+		for (int i = 0; i < block.model.Indices.size() / 3; i++)
 		{
-			glm::vec3 t1 = block.worldSpace(block.getPoint(i, 0));
-			glm::vec3 t2 = block.worldSpace(block.getPoint(i, 1));
-			glm::vec3 t3 = block.worldSpace(block.getPoint(i, 2));
+			glm::vec3 t1 = block.model.getTrianglePoint(i, 0);
+			glm::vec3 t2 = block.model.getTrianglePoint(i, 1);
+			glm::vec3 t3 = block.model.getTrianglePoint(i, 2);
 			glm::vec3 normal = Math::getNormal(t1, t2, t3);
+
+			
+			//skip if no apt intersection
+			float distanceTriangle = Math::distanceTrianglePoint(t1, t2, t3, p);
+			if (distanceTriangle <= 0.01f && distanceTriangle > -3.0f)
+				continue;
 
 			glm::vec3 susP = Math::triangleIntersection(t1, t2, t3, normal, p);
 
-			//skip if no apt intersection
-			if (glm::length(susP) == 0 || Math::distanceTrianglePoint(t1, t2, t3, p) <= 0.01f)
-				continue;
-
-			if (glm::distance(susP, p) < minDistance)
+			if (glm::length(susP) > 0 && glm::distance(susP, p) < minDistance)
 			{
 				minDistance = glm::distance(susP, p);
 				projectedPoint = susP;
@@ -73,24 +71,24 @@ void Spring::calculatePoints()
 	//project p2
 	if (i1 > -1 && i2 < 0)
 	{
-		p1 = r1->worldSpace(m1->points[i1]);
-		p2 = projectSpring( p1);
+		p1 = r1->worldSpace(r1->model.points[i1]);
+		p2 = projectSpring(p1);
 		return;
 	}
 
 	//project p1
 	if (i2 > -1 && i1 < 0)
 	{
-		p2 = r2->worldSpace(m2->points[i2]);
-		p1 = projectSpring( p2);
+		p2 = r2->worldSpace(r1->model.points[i2]);
+		p1 = projectSpring(p2);
 		return;
 	}
 
 	//no projection calculate both points
 	if (i1 > -1 && i2 > -1)
 	{
-		p1 = r1->worldSpace(m1->points[i1]);
-		p2 = r2->worldSpace(m2->points[i2]);
+		p1 = r1->worldSpace(r1->model.points[i1]);
+		p2 = r2->worldSpace(r2->model.points[i2]);
 		return;
 	}
 	return;

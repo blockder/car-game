@@ -55,9 +55,9 @@ int main()
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	
-	Model model = Model("Models/mesh.obj", "blank.png");
+	Model model = Model("Models/LOOP.obj", "blank.png");
 	
-	std::vector<Model> models = Model::loadModels("Models/track.obj", "blank.png");
+	std::vector<Model> models = Model::loadModels("Models/track1.obj", "blank.png");
 	
 	
 	
@@ -140,13 +140,13 @@ int main()
 
 	Block block = Block("brick_wall.png", blockV, indices, glm::vec3(0, -1.25f, 0.0), 10, 0.5, 20);
 	//map.push_back(block);
-	for(int i=1; i < models.size(); i++)
-	{
-		map.push_back(Block("blank.png", models[i].Vertices, models[i].Indices, models[i].points, glm::vec3(0, -2,5)));
-		map[i-1].setDirection(glm::vec3(0,1,0), 180);
-	}
 	Block block2 = Block("blank.png", blockV, indices, glm::vec3(0, 0.5f, 25.0), 3, 2.5, 0.5);
 	//map.push_back(block2);
+
+	for(int i=1; i < models.size(); i++)
+	{
+		map.push_back(Block(models[i], glm::vec3(-17, -2, 5)));
+	}
 	
 	//create spring
 	fr = Spring(0.4f, 200, 0, &car, NULL);
@@ -156,24 +156,27 @@ int main()
 	tr = Spring(0.4f, 200, 0, &car, NULL);
 	tl = Spring(0.4f, 200, 0, &car, NULL);
 
-	fl.setMap(&map); fr.setP1(&car, 0);
-	fr.setMap(&map); fl.setP1(&car, 1);
-	br.setMap(&map); bl.setP1(&car, 2);
-	bl.setMap(&map); br.setP1(&car, 3);
-	tr.setMap(&map); tr.setP1(&car, 6);
-	tl.setMap(&map); tl.setP1(&car, 7);
+	fl.setMap(&map); fr.setP1(0);
+	fr.setMap(&map); fl.setP1(1);
+	br.setMap(&map); bl.setP1(2);
+	bl.setMap(&map); br.setP1(3);
+	tr.setMap(&map); tr.setP1(6);
+	tl.setMap(&map); tl.setP1(7);
 	
 	
 	
 
 	double lastTime = 0;
+	double lastFRAME = 0;
 	double currentTime = 0;
+	int fpsCounter = 0;
 
 	//main loop
 	while (!glfwWindowShouldClose(window))
 	{
 		currentTime = glfwGetTime();
 
+		//enter game tick
 		if(currentTime - lastTime > 1.0/fps && !glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 		{
 			update(car, map);
@@ -181,7 +184,19 @@ int main()
 			draw(renderer3D, car, map);
 			
 			lastTime = currentTime;
+
+			fpsCounter++;
 		}
+
+		//fps counter
+		if (currentTime - lastFRAME > 1.0f)
+		{
+			std::string title = "OPENGL FPS:" + std::to_string(fpsCounter);
+			glfwSetWindowTitle(window, title.c_str());
+			fpsCounter = 0;
+			lastFRAME =  currentTime;
+		}
+
 		// Take care of all GLFW events
 		glfwPollEvents();
 	}
@@ -194,11 +209,11 @@ int main()
 void update(Car& car, std::vector<Block>& map)
 {
 	camera.updateMovement(window);
-
 	car.movement(window, 1.0 / fps);
 
 	//gravity
 	car.RigidBody::addForce(glm::vec3(0, -GRAVITY, 0) / car.inverseMass);
+	
 	
 	//spring force
 	fr.applyForce();
@@ -208,8 +223,8 @@ void update(Car& car, std::vector<Block>& map)
 	tr.applyForce();
 	tl.applyForce();
 	
-	car.onGround = Spring::onGround(fr, fl, br, bl);
-	
+	//car.onGround = Spring::onGround(fr, fl, br, bl);
+	car.onGround = true;
 	
 
 	//friction
@@ -255,15 +270,13 @@ void draw(Shader& shaderProgram, Car& car, std::vector<Block>& map)
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	//draw all blocks
-	for (auto block : map)
+	for (auto& block : map)
 	{
-		block.draw(shaderProgram, camera);
+		block.model.draw(shaderProgram, camera);
 	}
-	car.draw(shaderProgram, camera);
+	car.model.draw(shaderProgram, camera);
 	
 	
-	
-
 	// display what was drawn
 	glfwSwapBuffers(window);
 }

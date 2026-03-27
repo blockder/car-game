@@ -4,6 +4,8 @@
 #include<glm/gtc/type_ptr.hpp>
 
 
+
+
 Model::Model(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices) : Mesh()
 {
 	this->Vertices = Vertices;
@@ -17,16 +19,9 @@ Model::Model(std::string texture, std::vector<Vertex> Vertices, std::vector<GLui
 	}
 
 	loadVBO();
-}
-Model::Model(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices, std::vector<glm::vec3> points) : Mesh()
-{
-	this->Vertices = Vertices;
-	this->Indices = Indices;
-	this->texture = Texture(texture.c_str());
-	this->points = points;
 
-	loadVBO();
 }
+
 Model::Model(std::string ModelFile, std::string texture) : Mesh()
 {
 	this->texture = Texture(texture.c_str());
@@ -51,7 +46,7 @@ std::vector<Model> Model::loadModels(std::string filePath, std::string texture)
 	std::vector<glm::vec3> positions;
 	std::vector<GLuint> indices;
 	std::string line;
-	Model model;
+	Model model = Model();
 	int pointCount = 0;
 	while (std::getline(file, line))
 	{
@@ -105,6 +100,7 @@ void Model::loadVBO()
 {
 	//put data in VBO 
 	glNamedBufferData(VBO, sizeof(Vertex) * Vertices.size(), Vertices.data(), GL_DYNAMIC_DRAW);
+
 	//set EBO
 	glNamedBufferData(EBO, Indices.size() * sizeof(GLuint), Indices.data(), GL_STATIC_DRAW);
 }
@@ -170,6 +166,10 @@ void Model::draw(Shader& shaderProgram)
 	//send texture to shader
 	glUniform1i(glGetUniformLocation(shaderProgram.id, "texUnit"), textureUnit);
 
+	//send lightPos to shader
+	glm::vec3 lightPos(0,100,0);
+	glUniform3fv(glGetUniformLocation(shaderProgram.id, "lightPos"), 1,glm::value_ptr(lightPos));
+
 	//draw call
 	glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, 0);
 	
@@ -180,15 +180,16 @@ void Model::draw(Shader& shaderProgram)
 }
 void Model::draw(Shader& shaderProgram, Camera& camera)
 {
-	glm::mat4 position = glm::mat4(1.0f);
-	glm::mat4 rotation = glm::mat4(1.0f);
 	shaderProgram.Active();
+
 	//send camera matrix
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(camera.getMatrix()));
+
 	//send position matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "position"), 1, GL_FALSE, glm::value_ptr(position));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "position"), 1, GL_FALSE, glm::value_ptr(movement));
+
 	//send rotation matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "rotation"), 1, GL_FALSE, glm::value_ptr(rotation));
+	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "rotation"), 1, GL_FALSE, glm::value_ptr(rotationMatrix));
 
 	Model::draw(shaderProgram);
 }
@@ -208,7 +209,7 @@ Vertex Model::readFace(std::string string, std::vector<glm::vec3>& points, std::
 	std::vector<std::string> v_vt = split(string, "/");
 	return Vertex(points[std::stoi(v_vt[0])-1], glm::vec3(1.0f), texCoord[std::stoi(v_vt[1])-1]);
 }
-glm::vec3 Model::getPoint(int triangle, int point)
+glm::vec3 Model::getTrianglePoint(int triangle, int point)
 {
 	return Vertices[Indices[triangle * 3 + point]].position;
 }

@@ -10,56 +10,50 @@
 
 
 Block::Block(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices, glm::vec3 location, float width, float height, float depth)
-	: Model(texture, Vertices,  Indices)
+	: RigidBody(Model(texture, Vertices, Indices))
 {
-	this->center = location;
 
-	glm::mat3 model(width, 0, 0, 0, height, 0, 0, 0, depth);
-	//apply model matrix to points 
-	for (int i = 0; i < points.size(); i++)
+	glm::mat3 modelMatrix(width, 0, 0, 0, height, 0, 0, 0, depth);
+	//apply worldSpace to points
+	for (int i = 0; i < model.points.size(); i++)
 	{
-		points[i] = points[i] * model;
+		model.points[i] = model.points[i] * modelMatrix;
+		model.points[i] = model.points[i] + location;
 	}
-	//apply model matrix to vertices 
-	for (int i = 0; i < Vertices.size(); i++)
+	//apply worldSpace to vertices 
+	for (int i = 0; i < model.Vertices.size(); i++)
 	{
-		this->Vertices[i].position = Vertices[i].position * model;
+		model.Vertices[i].position = model.Vertices[i].position * modelMatrix;
+		model.Vertices[i].position = model.Vertices[i].position + location;
 	}
-	loadVBO();
+	model.loadVBO();
 
-	//set matrices
-	movement = glm::translate(glm::mat4(1.0f), center);
-	rotationMatrix = rotation.getMatrix();
 }
-Block::Block(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices, std::vector<glm::vec3> points, glm::vec3 location)
-	: Model(texture, Vertices, Indices, points)
+Block::Block(Model& model, glm::vec3 location) : RigidBody(model)
 {
-	this->center = location;
-	//set matrices
-	movement = glm::translate(glm::mat4(1.0f), center);
-	rotationMatrix = rotation.getMatrix();
+	//apply worldSpace to points 
+	for (int i = 0; i < model.points.size(); i++)
+	{
+		this->model.points[i] =  model.points[i] + location ;
+	}
+	//apply worldSpace to vertices 
+	for (int i = 0; i < model.Vertices.size(); i++)
+	{
+		this->model.Vertices[i].position = model.Vertices[i].position + location;
+	}
+	this->model.loadVBO();
+
 }
 
 
-void Block::draw(Shader& shaderProgram, Camera& camera)
-{
-	shaderProgram.Active();
-	//send camera matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(camera.getMatrix()));
-	//send position matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "position"), 1, GL_FALSE, glm::value_ptr(movement));
-	//send rotation matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "rotation"), 1, GL_FALSE, glm::value_ptr(rotationMatrix));
 
-	Model::draw(shaderProgram);
-}
 
 
 
 void Block::setDirection(glm::vec3 rot, float angle)
 {
 	rotation = Quaternion(rot, angle);
-	rotationMatrix = rotation.getMatrix();
+	model.rotationMatrix = rotation.getMatrix();
 }
 
 

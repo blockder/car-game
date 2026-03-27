@@ -10,7 +10,7 @@
 
 
 Car::Car(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices) 
-	: Model(texture, Vertices, Indices)
+	: RigidBody(Model(texture, Vertices, Indices))
 {
 	speed = 10;
 	tireFriction = 10;
@@ -18,23 +18,9 @@ Car::Car(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> 
 	angularDrag = 20;
 	onGround = false;
 	//set physics
-	RigidBody::setPhysics(2, points);
+	RigidBody::setMass(2);
 }
 
-
-
-void Car::draw(Shader& shaderProgram, Camera& camera)
-{
-	shaderProgram.Active();
-	//send camera matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(camera.getMatrix()));
-	//send position matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "position"), 1, GL_FALSE, glm::value_ptr(RigidBody::movement));
-	//send rotation matrix
-	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "rotation"), 1, GL_FALSE, glm::value_ptr(rotationMatrix));
-
-	Model::draw(shaderProgram);
-}
 
 
 void Car::movement(GLFWwindow* window, float deltaTime)
@@ -119,5 +105,5 @@ void Car::applyFriction()
 void Car::setDirection(glm::vec3 rot, float angle)
 {
 	rotation = Quaternion(rot, angle);
-	rotationMatrix = rotation.getMatrix();
+	model.rotationMatrix = rotation.getMatrix();
 }

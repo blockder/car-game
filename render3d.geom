@@ -6,6 +6,7 @@ layout (triangle_strip, max_vertices = 3) out;
 out vec3 normal;
 out vec3 color;
 out vec2 texCoord;
+out vec3 coordinate;
 
 uniform mat4 cameraMatrix;
 
@@ -24,16 +25,19 @@ void main()
 	
 	color = data_in[0].color;
 	texCoord = data_in[0].texCoord;
+	coordinate = vec3(gl_in[0].gl_Position);
 	gl_Position = cameraMatrix * gl_in[0].gl_Position;
 	EmitVertex();
 
 	color = data_in[1].color;
 	texCoord = data_in[1].texCoord;
+	coordinate = vec3(gl_in[1].gl_Position);
 	gl_Position = cameraMatrix * gl_in[1].gl_Position;
 	EmitVertex();
 
 	color = data_in[2].color;
 	texCoord = data_in[2].texCoord;
+	coordinate = vec3(gl_in[2].gl_Position);
 	gl_Position = cameraMatrix * gl_in[2].gl_Position;
 	EmitVertex();
 

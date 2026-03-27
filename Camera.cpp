@@ -82,13 +82,23 @@ void Camera::updateMovement(GLFWwindow* window)
 }
 void Camera::updateMovement(Car& car)
 {
-	//update location
-	loc = car.center + glm::vec3(0, 2.0f, 0) - direction * 2.0f;
+	glm::vec3 localForward = car.rotation * glm::vec3(0, 0, 1);
+	glm::vec3 localUp = car.rotation * glm::vec3(0, 1, 0);
 
+	//update location
+	loc = car.center + glm::vec3(0,1,0);
+	//direction = localForward - 0.2f * localUp;
+
+
+	//update location and direction only if car on ground
 	if (!car.onGround)
 		return;
-	//update Direction
-	glm::vec3 carDirection = car.rotation * glm::vec3(0, 0, 1); carDirection.y = 0;
-	direction = carDirection + glm::vec3(0, -0.2f, 0.0f);
 
+	//update location
+	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -2.0);
+
+	//update Direction
+	glm::vec3 carDirection = localForward;
+	direction = carDirection -0.2f * localUp;
+	up = localUp;
 }

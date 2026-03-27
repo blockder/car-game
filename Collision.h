@@ -5,8 +5,7 @@
 
 class RigidBody;
 class Model;
-class Car;
-class Block;
+
 
 struct Contact
 {
@@ -24,7 +23,7 @@ struct Contact
 
 	void solveVelocity(float c, float u);
 
-	static std::vector<Contact> createContacts(Model* m, RigidBody* r, RigidBody* other, std::vector<glm::vec3> points);
+	static std::vector<Contact> createContacts(RigidBody* body, RigidBody* other, std::vector<glm::vec3> points);
 };
 
 class Collision
@@ -38,16 +37,11 @@ public:
 
 	static void penetrationResolver(std::vector<Contact>& contacts);
 
-	static std::vector<Contact> getContacts(Car& car, Block& block);
+	static std::vector<Contact> getContacts(RigidBody& r1, RigidBody& block);
 
 private:
-	static bool insideBlock(Car& car, Block& block, std::vector<Contact>& contacts);
-	static bool insideCar(Car& car, Block& block, std::vector<Contact>& contacts);
-	static bool Edges(Car& car, Block& block, std::vector<Contact>& contacts);
-	static bool faceEdges(Car& car, Block& blockm, std::vector<Contact>& contacts);
-	static glm::vec3 avaregeContact(std::vector<Contact>& contacts, glm::vec3 center);
-	static bool insideCar(Car& car, glm::vec3 point);
-	static bool insideBlock(Block& block, glm::vec3 point);
+	static bool insideBody(RigidBody& body, RigidBody& other, std::vector<Contact>& contacts);
+	static bool faceEdges(RigidBody& body, RigidBody& block, std::vector<Contact>& contacts);
 	static float getMaxPenetration(std::vector<Contact>& contacts);
 	
 

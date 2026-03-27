@@ -11,6 +11,8 @@ public:
 	
 	virtual void draw(Shader& shaderProgram) = 0;
 
+	virtual void loadVBO() = 0;
+
 protected:
 	GLuint VAO;
 	GLuint VBO;

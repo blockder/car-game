@@ -5,25 +5,31 @@
 #include<iostream>
 #include <iomanip>
 
-RigidBody::RigidBody()
+RigidBody::RigidBody(Model model)
 {
-	//default settings
-	this->inverseMass = 0;
-	this->inverseInersia = glm::mat3(0.0f);
-	this->center = glm::vec3(0.0f);
-	this->rotation = Quaternion(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
+	this->model = model;
 
-	this->velocity = glm::vec3(0.0f);
-	this->angularVelocity = glm::vec3(0.0f);
+	//default settings
+	inverseMass = 0;
+	inverseInersia = glm::mat3(0.0f);
+
+	center = glm::vec3(0.0f);
+	rotation = Quaternion(glm::vec4(1.0f, 0.0f, 0.0f, 0.0f));
+
+	velocity = glm::vec3(0.0f);
+	angularVelocity = glm::vec3(0.0f);
+
+	acceleration = glm::vec3(0);
+	angularAcceleration = glm::vec3(0);
 
 	clearForces();
 }
-void RigidBody::setPhysics(float mass, std::vector<glm::vec3> points)
+void RigidBody::setMass(float mass)
 {
 	if (mass != 0)
 	{
-	this->inverseMass = 1 / mass;
-	this->inverseInersia = setInersia(points);
+		this->inverseMass = 1 / mass;
+		this->inverseInersia = setInersia(model.points);
 	}
 }
 void RigidBody::clearForces()
@@ -114,8 +120,8 @@ void RigidBody::Integrate(float deltaTime)
 	
 	
 	//update matrix
-	movement = glm::translate(glm::mat4(1.0f), center );
-	rotationMatrix = rotation.getMatrix();
+	model.movement = glm::translate(glm::mat4(1.0f), center );
+	model.rotationMatrix = rotation.getMatrix();
 	
 	//reset forces for next update
 	clearForces();

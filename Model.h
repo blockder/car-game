@@ -13,22 +13,27 @@ class Model : public Mesh
 public:
 	Texture texture;
 	std::vector<Vertex> Vertices;
-	std::vector<glm::vec3> points;
 	std::vector<GLuint> Indices;
+	std::vector<glm::vec3> points;
+
+	glm::mat4 movement = glm::mat4(1.0f);
+	glm::mat4 rotationMatrix = glm::mat4(1.0f);
 
 	Model() = default;
 	Model(std::string ModelFile, std::string texture);
 	Model(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices);
-	Model(std::string texture, std::vector<Vertex> Vertices, std::vector<GLuint> Indices, std::vector<glm::vec3> points);
+	
+	void loadVBO() override;
 
 	void draw(Shader& shaderProgram) override;
 	void draw(Shader& shaderProgram, Camera& camera);
 
-	glm::vec3 getPoint(int triangle, int point);
+	glm::vec3 getTrianglePoint(int triangle, int point);
 
 	static std::vector<Model> loadModels(std::string filePath, std::string texture);
-	void loadVBO();
+
 protected:
+
 private:
 	void loadModel(std::string ModelFile);
 	void setDefaultIndices();
