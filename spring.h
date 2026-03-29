@@ -1,6 +1,7 @@
 #pragma once
 #include<glm/glm.hpp>
 #include<vector>
+#include"QuadTree.h"
 
 class Block;
 class RigidBody;
@@ -23,7 +24,7 @@ public:
 
 	void setP1(int i1);
 	void setP2(int i2);
-	void setMap(std::vector<Block>* map);
+	void setMap(QuadTree* map, Model* mapModel);
 	float getLength();
 
 	void applyForce();
@@ -32,7 +33,8 @@ public:
 private:
 	int i1;
 	int i2;
-	std::vector<Block>* map;
+	QuadTree* map;
+	Model* mapModel;
 	glm::vec3 projectSpring( glm::vec3 p);
 	void calculatePoints();
 };

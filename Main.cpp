@@ -13,6 +13,7 @@
 #include"Collision.h"
 #include"Block.h"
 #include"Spring.h"
+#include"QuadTree.h"
 
 const int screenWidth = 800;
 const int screenHeight = 800;
@@ -23,6 +24,7 @@ GLFWwindow* window;
 Camera camera;
 const int fps = 60;
 Spring fr, fl, br, bl, tr, tl;
+
 
 void update(Car& car, std::vector<Block>& map);
 void draw(Shader& shaderProgram, Car& car, std::vector<Block>& map);
@@ -53,12 +55,20 @@ int main()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-	
+ 
+	//load models
 	Model model = Model("Models/LOOP.obj", "blank.png");
-	
 	std::vector<Model> models = Model::loadModels("Models/track1.obj", "blank.png");
+
+	//create quadtree of map
+	HitBox zone = HitBox(glm::vec3(-120), 200, 200, 200);
+	QuadTree tree = QuadTree(zone);
+
+	//insert map into tree
+	std::vector<HitBox> hitboxList = HitBox::convertToHitbox(models);
+	tree.insert(hitboxList);
 	
+	tree.print(0);
 	
 	
 	camera = Camera(glm::vec3(0.0f, 1.0f, -2.0f), glm::vec3(0.0f, -0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), screenWidth, screenHeight);
@@ -108,12 +118,9 @@ int main()
 	carV.push_back(p8);
 	
 	Car car = Car("grid.png", carV, indices);
+	car.center = glm::vec3(7, 10, 0);
 	
 	
-	//car.addImpulse(glm::vec3(0.2, 0, 0), glm::vec3(-0.0, -0.4, 0.0));
-	car.setDirection(glm::vec3(1, 0, 0), 0.0f);
-	//car.inverseMass = 1.0f / 10.0f;
-	//car.center = glm::vec3(7, 0, 0);
 	
 	//set point for block
 	static Vertex b1(glm::vec3(0.5f, -0.5f, 0.5f), glm::vec3(1.0f), glm::vec2(1.0f, 0.0f));
@@ -145,7 +152,7 @@ int main()
 
 	for(int i=1; i < models.size(); i++)
 	{
-		map.push_back(Block(models[i], glm::vec3(-17, -2, 5)));
+		map.push_back(Block(models[i], glm::vec3(0)));
 	}
 	
 	//create spring
@@ -156,12 +163,12 @@ int main()
 	tr = Spring(0.4f, 200, 0, &car, NULL);
 	tl = Spring(0.4f, 200, 0, &car, NULL);
 
-	fl.setMap(&map); fr.setP1(0);
-	fr.setMap(&map); fl.setP1(1);
-	br.setMap(&map); bl.setP1(2);
-	bl.setMap(&map); br.setP1(3);
-	tr.setMap(&map); tr.setP1(6);
-	tl.setMap(&map); tl.setP1(7);
+	fl.setMap(&tree, &map[0].model); fr.setP1(0);
+	fr.setMap(&tree, &map[0].model); fl.setP1(1);
+	br.setMap(&tree, &map[0].model); bl.setP1(2);
+	bl.setMap(&tree, &map[0].model); br.setP1(3);
+	tr.setMap(&tree, &map[0].model); tr.setP1(6);
+	tl.setMap(&tree, &map[0].model); tl.setP1(7);
 	
 	
 	
@@ -223,10 +230,9 @@ void update(Car& car, std::vector<Block>& map)
 	tr.applyForce();
 	tl.applyForce();
 	
-	//car.onGround = Spring::onGround(fr, fl, br, bl);
-	car.onGround = true;
+	car.onGround = Spring::onGround(fr, fl, br, bl);
 	
-
+	
 	//friction
 	car.applyFriction();
 
