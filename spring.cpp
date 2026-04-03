@@ -27,57 +27,46 @@ void Spring::setP2(int i2)
 {
 	this->i2 = i2;
 }
-void Spring::setMap(QuadTree* map, Model* mapModel)
+void Spring::setMap(std::vector<Model>* map)
 {
 	this->map = map;
-	this->mapModel = mapModel;
+}
+void Spring::setTriangles(std::vector<int>& triangles)
+{
+	this->triangles = triangles;
 }
 float Spring::getLength()
 {
 	return glm::distance(p1, p2);
 }
-glm::vec3 Spring::projectSpring( glm::vec3 p)
+glm::vec3 Spring::projectSpring(glm::vec3 p)
 {
 	glm::vec3 projectedPoint = p + glm::vec3(0,-1,0) * (restingLength + 0.1f);
+
+	//project ray for each triangle and set point for shortest distance found
 	float minDistance = restingLength;
-
-	//make hitbox of r1
-	std::vector<glm::vec3> wsPoints;
-	for (auto& point : r1->model.points)
+	for (int k=0; k<triangles.size(); k+=2)
 	{
-		wsPoints.push_back(r1->worldSpace(point));
-	}
-	HitBox r1Hitbox = HitBox(wsPoints);
-
-	HitBox zone = HitBox(glm::vec3(-50), 100, 100, 100);
-	
-	std::vector<HitBox*> triangles = map->getData(r1Hitbox);
-	//std::cout << "triangles count " << triangles.size() << std::endl;
-	for (auto hitbox : triangles)
-	{
-		
-		int i = hitbox->pointer;
-		
-		glm::vec3 t1 = mapModel->getTrianglePoint(i, 0);
-		glm::vec3 t2 = mapModel->getTrianglePoint(i, 1);
-		glm::vec3 t3 = mapModel->getTrianglePoint(i, 2);
+		int i = triangles[k];
+		int n = triangles[k+1];
+		glm::vec3 t1 = (*map)[n].getTrianglePoint(i, 0);
+		glm::vec3 t2 = (*map)[n].getTrianglePoint(i, 1);
+		glm::vec3 t3 = (*map)[n].getTrianglePoint(i, 2);
 		glm::vec3 normal = Math::getNormal(t1, t2, t3);
 
 		//skip if no apt intersection
 		float distanceTriangle = Math::distanceTrianglePoint(t1, t2, t3, p);
-		if (distanceTriangle <= 0.01f && distanceTriangle > -3.0f)
+		if (distanceTriangle <= 0.01f || distanceTriangle > 3.0f)
 			continue;
 
 		glm::vec3 susP = Math::triangleIntersection(t1, t2, t3, normal, p);
 
-		if (glm::length(susP) > 0 && glm::distance(susP, p) < minDistance)
+		if (glm::length(susP) > 0 && distanceTriangle < minDistance)
 		{
-			minDistance = glm::distance(susP, p);
+			minDistance = distanceTriangle;
 			projectedPoint = susP;
-		}
-		
+		}	
 	}
-
 	return projectedPoint;
 }
 void Spring::calculatePoints()
@@ -150,13 +139,13 @@ bool Spring::makeContact(std::vector<Contact>& contacts)
 
 	if (r1 != NULL) 
 	{
-		contacts.push_back(Contact(r1, new RigidBody(), p1, glm::normalize(p2 - p1), 0));
+		contacts.push_back(Contact(r1, NULL, p1, glm::normalize(p2 - p1), 0));
 		return true;
 	}
 
 	if (r2 != NULL)
 	{
-		contacts.push_back(Contact(r2, new RigidBody(), p2, glm::normalize(p1 - p2), 0));
+		contacts.push_back(Contact(r2, NULL, p2, glm::normalize(p1 - p2), 0));
 		return true;
 	}
 }

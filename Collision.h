@@ -2,6 +2,7 @@
 #include<glm/glm.hpp>
 #include<vector>
 #include<iostream>
+#include"QuadTree.h"
 
 class RigidBody;
 class Model;
@@ -17,6 +18,7 @@ struct Contact
 	float accumulatedNormal;
 	glm::vec3 accumulatedSide;
 
+
 	Contact(RigidBody* body, RigidBody* other, glm::vec3 point, glm::vec3 normal, float penetration);
 
 	float getClosingVelocity();
@@ -29,9 +31,10 @@ struct Contact
 class Collision
 {
 public:
+	static RigidBody* empty;
 	static std::vector<RigidBody*> objects;
 
-	static void collisionDetector();
+	static std::vector<int> collisionDetector(QuadTree& tree, RigidBody& body);
 
 	static void velocityResolver(std::vector<Contact>& contacts, float c, float u);
 

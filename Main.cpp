@@ -26,7 +26,7 @@ const int fps = 60;
 Spring fr, fl, br, bl, tr, tl;
 
 
-void update(Car& car, std::vector<Block>& map);
+void update(Car& car, std::vector<Block>& map, QuadTree& tree);
 void draw(Shader& shaderProgram, Car& car, std::vector<Block>& map);
 
 int main()
@@ -55,20 +55,22 @@ int main()
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
- 
+	RigidBody empty = RigidBody();
+	Collision::empty = &empty;
+
 	//load models
-	Model model = Model("Models/LOOP.obj", "blank.png");
-	std::vector<Model> models = Model::loadModels("Models/track1.obj", "blank.png");
+	std::vector<Model> models = Model::loadModels("Models/track2.obj", "blank.png");
 
 	//create quadtree of map
-	HitBox zone = HitBox(glm::vec3(-120), 200, 200, 200);
-	QuadTree tree = QuadTree(zone);
+	HitBox zone = HitBox(glm::vec3(-200), 400, 400, 400);
 
 	//insert map into tree
 	std::vector<HitBox> hitboxList = HitBox::convertToHitbox(models);
+
+	QuadTree tree = QuadTree(zone, 0, &hitboxList);
 	tree.insert(hitboxList);
 	
-	tree.print(0);
+	//tree.print(0);
 	
 	
 	camera = Camera(glm::vec3(0.0f, 1.0f, -2.0f), glm::vec3(0.0f, -0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), screenWidth, screenHeight);
@@ -118,7 +120,7 @@ int main()
 	carV.push_back(p8);
 	
 	Car car = Car("grid.png", carV, indices);
-	car.center = glm::vec3(7, 10, 0);
+	car.center = glm::vec3(0, 2, 0);
 	
 	
 	
@@ -150,25 +152,24 @@ int main()
 	Block block2 = Block("blank.png", blockV, indices, glm::vec3(0, 0.5f, 25.0), 3, 2.5, 0.5);
 	//map.push_back(block2);
 
-	for(int i=1; i < models.size(); i++)
+	for (Model& model : models)
 	{
-		map.push_back(Block(models[i], glm::vec3(0)));
+		map.push_back(Block(model, glm::vec3(0)));
 	}
+	
 	
 	//create spring
 	fr = Spring(0.4f, 200, 0, &car, NULL);
 	fl = Spring(0.4f, 200, 0, &car, NULL);
 	br = Spring(0.4f, 200, 0, &car, NULL);
 	bl = Spring(0.4f, 200, 0, &car, NULL);
-	tr = Spring(0.4f, 200, 0, &car, NULL);
-	tl = Spring(0.4f, 200, 0, &car, NULL);
+	
 
-	fl.setMap(&tree, &map[0].model); fr.setP1(0);
-	fr.setMap(&tree, &map[0].model); fl.setP1(1);
-	br.setMap(&tree, &map[0].model); bl.setP1(2);
-	bl.setMap(&tree, &map[0].model); br.setP1(3);
-	tr.setMap(&tree, &map[0].model); tr.setP1(6);
-	tl.setMap(&tree, &map[0].model); tl.setP1(7);
+	fl.setMap(&models); fr.setP1(0);
+	fr.setMap(&models); fl.setP1(1);
+	br.setMap(&models); bl.setP1(2);
+	bl.setMap(&models); br.setP1(3);
+	
 	
 	
 	
@@ -186,7 +187,7 @@ int main()
 		//enter game tick
 		if(currentTime - lastTime > 1.0/fps && !glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 		{
-			update(car, map);
+			update(car, map, tree);
 
 			draw(renderer3D, car, map);
 			
@@ -213,7 +214,7 @@ int main()
 	glfwTerminate();
 	return -1;
 }
-void update(Car& car, std::vector<Block>& map)
+void update(Car& car, std::vector<Block>& map, QuadTree& tree)
 {
 	camera.updateMovement(window);
 	car.movement(window, 1.0 / fps);
@@ -221,14 +222,15 @@ void update(Car& car, std::vector<Block>& map)
 	//gravity
 	car.RigidBody::addForce(glm::vec3(0, -GRAVITY, 0) / car.inverseMass);
 	
+	//get data from qudatree
+	std::vector<int> zone = Collision::collisionDetector(tree, car);
 	
 	//spring force
-	fr.applyForce();
-	fl.applyForce();
-	bl.applyForce();
-	br.applyForce();
-	tr.applyForce();
-	tl.applyForce();
+	fr.setTriangles(zone); fr.applyForce();
+	fl.setTriangles(zone); fl.applyForce();
+	bl.setTriangles(zone); bl.applyForce();
+	br.setTriangles(zone); br.applyForce();
+
 	
 	car.onGround = Spring::onGround(fr, fl, br, bl);
 	
@@ -238,8 +240,8 @@ void update(Car& car, std::vector<Block>& map)
 
 	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
 	{
-		//car.applyImpulse(car.center , glm::vec3(0,-0.15,0));
-		car.center = glm::vec3(0.0, 20, 0);
+		car.addForce(car.center , glm::vec3(0,7,0));
+		//car.center = glm::vec3(0.0, 20, 0);
 	}
 	
 	//collision
@@ -254,14 +256,12 @@ void update(Car& car, std::vector<Block>& map)
 	fr.makeContact(contacts);
 	bl.makeContact(contacts);
 	br.makeContact(contacts);
-	tr.makeContact(contacts);
-	tl.makeContact(contacts);
+	
 
-	
-	
 	Collision::velocityResolver(contacts, BOUNCE, FRICTION);
+
 	//Collision::penetrationResolver(contacts);
-	
+
 
 	//integrate car
 	car.Integrate(1.0 / fps);

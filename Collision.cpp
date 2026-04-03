@@ -6,6 +6,7 @@
 #include<glm/gtc/type_ptr.hpp>
 #include<cmath>
 
+RigidBody* Collision::empty = nullptr;
 struct Edge
 {
 	glm::vec3 p1;
@@ -22,8 +23,24 @@ glm::mat3 getContactTransform(glm::vec3 normal)
 	inverseRotation[0] = glm::cross(inverseRotation[2], inverseRotation[1]);
 	return glm::inverse(inverseRotation);
 }
-void Collision::collisionDetector()
+std::vector<int> Collision::collisionDetector(QuadTree& tree, RigidBody& body)
 {
+	std::vector<int> triangles;
+
+	//create hitbox for body
+	std::vector<glm::vec3> wsPoints;
+	for (auto& point : body.model.points)
+	{
+		wsPoints.push_back(body.worldSpace(point));
+	}
+	HitBox hitbox = HitBox(wsPoints);
+	hitbox.enLarge(1.5);
+	hitbox.blCorner.y -= 0.5f;
+	hitbox.height += 0.5f;
+
+	triangles = QuadTree::unDupe(tree.hitboxArray, tree.getData(hitbox));
+	//std::cout << "triangles count " << triangles.size()/2 << std::endl;
+	return triangles;
 
 }
 void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float u)
@@ -61,6 +78,12 @@ void Collision::penetrationResolver(std::vector<Contact>& contacts)
 	int contactNum = 0;
 	for (int i = 0; i < contacts.size(); i++)
 	{
+		//handle one object cases
+		if (contacts[i].body == NULL)
+			contacts[i].body = Collision::empty;
+		if (contacts[i].other == NULL)
+			contacts[i].other = Collision::empty;
+
 		if (contacts[i].penetration > maxPen)
 		{
 			maxPen = contacts[i].penetration;
@@ -222,11 +245,24 @@ Contact::Contact(RigidBody* body, RigidBody* other, glm::vec3 point, glm::vec3 n
 }
 float Contact::getClosingVelocity()
 {
+	//handle one object cases
+	if (body == NULL)
+		body = Collision::empty;
+	if (other == NULL)
+		other = Collision::empty;
+
 	glm::vec3 relVelocity = other->getVelocity(point) - body->getVelocity(point);
 	return std::abs(glm::dot(relVelocity, normal));
 }
 void Contact::solveVelocity(float c, float u)
 {
+	//handle one object cases
+	if (body == NULL)
+		body = Collision::empty;
+	if (other == NULL)
+		other = Collision::empty;
+
+	//create contact coordinate matrix
 	glm::mat3 contactCoordinate = getContactTransform(normal);
 	glm::mat3 contactToWorldSpace = glm::inverse(contactCoordinate);
 
@@ -268,6 +304,7 @@ void Contact::solveVelocity(float c, float u)
 	//apply friction impulse
 	other->applyImpulse(point, sideImpulse);
 	body->applyImpulse(point, -sideImpulse);
+	
 	return;
 	
 }

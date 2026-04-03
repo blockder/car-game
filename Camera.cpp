@@ -86,7 +86,7 @@ void Camera::updateMovement(Car& car)
 	glm::vec3 localUp = car.rotation * glm::vec3(0, 1, 0);
 
 	//update location
-	loc = car.center + glm::vec3(0,1,0);
+	loc = car.center + glm::vec3(0,0.5,0);
 	//direction = localForward - 0.2f * localUp;
 
 
@@ -95,7 +95,7 @@ void Camera::updateMovement(Car& car)
 		return;
 
 	//update location
-	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -2.0);
+	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -3.0);
 
 	//update Direction
 	glm::vec3 carDirection = localForward;

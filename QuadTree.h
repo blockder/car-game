@@ -2,7 +2,6 @@
 #include<glm/glm.hpp>
 #include"Math.h"
 #include<vector>
-#include<array>
 #include <iostream>
 #include"Model.h"
 
@@ -12,7 +11,8 @@ struct HitBox
 	float width;
 	float height;
 	float depth;
-	int pointer;
+	int triNum;
+	int modelNum;
 
 	HitBox() = default;
 	HitBox(glm::vec3 blCorner, float width, float height, float depth);
@@ -21,6 +21,9 @@ struct HitBox
 	bool contain(HitBox& other);
 	bool touch(HitBox& other);
 
+	void enLarge(float size);
+	float getVolume();
+
 	static std::vector<HitBox> convertToHitbox(std::vector<Model>& models);
 
 };
@@ -28,21 +31,28 @@ class QuadTree
 {
 public:
 	//children
-	std::array< std::unique_ptr<QuadTree>, 8> children;
+	std::vector<std::unique_ptr<QuadTree>> children;
 	
 	//data
-	std::vector<HitBox> data;
+	std::vector<HitBox>* hitboxArray;
+	std::vector<int> data;
 	HitBox area;
+	int level;
+	bool leaf;
 
-	QuadTree(HitBox& area);
+	QuadTree(HitBox& area, int level, std::vector<HitBox>* hitboxArray);
 
-	std::array<HitBox, 8> getChildren();
+	std::vector<HitBox> getChildren();
+	std::vector<int> getChildren(HitBox& hitbox);
 
-	void insert(HitBox& hitbox);
+	void insert(int hitboxNum);
 	void insert(std::vector<HitBox>& hitboxList);
 
-	std::vector<HitBox*> getData(HitBox& area);
+	std::vector<int> getData(HitBox& area);
+
 
 	void print(int level);
+
+	static std::vector<int> unDupe(std::vector<HitBox>* hitboxArray, std::vector<int> dupe);
 
 };

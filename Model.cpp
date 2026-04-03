@@ -94,6 +94,9 @@ std::vector<Model> Model::loadModels(std::string filePath, std::string texture)
 	model.loadVBO();
 	models.push_back(model);
 
+	//remove first model
+	models.erase(models.begin());
+
 	return models;
 }
 void Model::loadVBO()

@@ -1,10 +1,11 @@
 #pragma once
 #include<glm/glm.hpp>
 #include<vector>
-#include"QuadTree.h"
+
 
 class Block;
 class RigidBody;
+class Model;
 struct Contact;
 
 class Spring
@@ -24,7 +25,8 @@ public:
 
 	void setP1(int i1);
 	void setP2(int i2);
-	void setMap(QuadTree* map, Model* mapModel);
+	void setMap(std::vector<Model>* map);
+	void setTriangles(std::vector<int>& triangles);
 	float getLength();
 
 	void applyForce();
@@ -33,8 +35,8 @@ public:
 private:
 	int i1;
 	int i2;
-	QuadTree* map;
-	Model* mapModel;
+	std::vector<int> triangles;
+	std::vector<Model>* map;
 	glm::vec3 projectSpring( glm::vec3 p);
 	void calculatePoints();
 };

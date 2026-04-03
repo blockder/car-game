@@ -1,4 +1,5 @@
 #include"QuadTree.h"
+#include <algorithm>
 
 HitBox::HitBox(glm::vec3 blCorner, float width, float height, float depth)
 {
@@ -6,7 +7,8 @@ HitBox::HitBox(glm::vec3 blCorner, float width, float height, float depth)
 	this->width = width;
 	this->height = height;
 	this->depth = depth;
-	pointer = -1;
+	triNum = -1;
+	modelNum = -1;
 }
 
 HitBox::HitBox(std::vector<glm::vec3>& points)
@@ -27,12 +29,26 @@ HitBox::HitBox(std::vector<glm::vec3>& points)
 	}
 
 	blCorner = glm::vec3(minX, minY, minZ);
-	width = maxX - minX;
-	height = maxY - minY;
-	depth = maxZ - minZ;
-	pointer = -1;
+	width = std::abs(maxX - minX);
+	height = std::abs(maxY - minY);
+	depth = std::abs(maxZ - minZ);
+	triNum = -1;
+	modelNum = -1;
 }
-
+void HitBox::enLarge(float size)
+{
+	blCorner.x -= (size -1) * 0.5f * width;
+	blCorner.y -= (size - 1) * 0.5f * height;
+	blCorner.z -= (size - 1) * 0.5f * depth;
+	width *= size;
+	height *= size;
+	depth *= size;
+	return;
+}
+float HitBox::getVolume()
+{
+	return width * height * depth;
+}
 bool HitBox::contain(HitBox& other)
 {
 	glm::vec3 otherCorner = other.blCorner;
@@ -46,19 +62,25 @@ bool HitBox::touch(HitBox& other)
 {
 	glm::vec3 otherCorner = other.blCorner;
 	bool touchX = otherCorner.x <= blCorner.x + width && otherCorner.x + other.width >= blCorner.x;
+	if (!touchX) return false;
 	bool touchY = otherCorner.y <= blCorner.y + height && otherCorner.y + other.height >= blCorner.y;
+	if (!touchY) return false;
 	bool touchZ = otherCorner.z <= blCorner.z + depth && otherCorner.z + other.depth >= blCorner.z;
-	return touchX && touchY && touchZ;
+	return touchZ;
 }
 
-QuadTree::QuadTree(HitBox& area)
+QuadTree::QuadTree(HitBox& area, int level, std::vector<HitBox>* hitboxArray)
 {
 	this->area = area;
+	this->level = level;
+	this->hitboxArray = hitboxArray;
+	this->leaf = true;
+	children.resize(8);
 }
 
-std::array<HitBox, 8> QuadTree::getChildren()
+std::vector<HitBox> QuadTree::getChildren()
 {
-	std::array<HitBox, 8> children;
+	std::vector<HitBox> children(8);
 	
 	//buttom
 	glm::vec3 dbr_corner = area.blCorner; dbr_corner.x += area.width / 2;
@@ -83,70 +105,167 @@ std::array<HitBox, 8> QuadTree::getChildren()
 
 	return children;
 }
+std::vector<int> QuadTree::getChildren(HitBox& hitbox)
+{
+	//will only work in hitbox touches area
+	std::vector<int> approvedChildren;
+	std::vector<bool> chunks(8, true);
+
+	//try to remove in x
+	if (hitbox.blCorner.x + hitbox.width <= area.blCorner.x + area.width/2)
+	{
+		//delete right
+		chunks[1] = chunks[3] = chunks[5] = chunks[7] = false;
+	}
+	else
+	{
+		if (hitbox.blCorner.x >= area.blCorner.x + area.width / 2)
+		{
+			//delete left
+			chunks[0] = chunks[2] = chunks[4] = chunks[6] = false;
+		}
+	}
+
+	//try to remove in y
+	if (hitbox.blCorner.y + hitbox.height <= area.blCorner.y + area.height / 2)
+	{
+		//remove up
+		chunks[4] = chunks[5] = chunks[6] = chunks[7] = false;
+	}
+	else
+	{
+		if (hitbox.blCorner.y >= area.blCorner.y + area.height / 2)
+		{
+			//remove down
+			chunks[0] = chunks[1] = chunks[2] = chunks[3] = false;
+		}
+	}
+
+	//try  to remove in z
+	if (hitbox.blCorner.z + hitbox.depth <= area.blCorner.z + area.depth / 2)
+	{
+		//remove far
+		chunks[2] = chunks[3] = chunks[6] = chunks[7] = false;
+	}
+	else
+	{
+		if (hitbox.blCorner.z >= area.blCorner.z + area.depth / 2)
+		{
+			//remove close
+			chunks[0] = chunks[1] = chunks[4] = chunks[5] = false;
+		}
+	}
+
+	//return only chunks with true value
+	for (int i = 0; i < chunks.size(); i++)
+	{
+		if (chunks[i])
+			approvedChildren.push_back(i);
+	}
+	return approvedChildren;
+}
 
 void QuadTree::insert(std::vector<HitBox>& hitboxList)
 {
-	for (auto& hitbox : hitboxList)
+	for (int i = 0; i < hitboxList.size(); i++)
 	{
-		insert(hitbox);
+		if (area.touch(hitboxList[i])) 
+		{
+			insert(i);
+		}
 	}
 }
-void QuadTree::insert(HitBox& hitbox)
+void QuadTree::insert(int hitboxNum)
 {
-	//check if hitbox is inside node area
-	if (!area.contain(hitbox))
-		return;
+	//assume was checked before
+	data.push_back(hitboxNum);
 
-	//check if hitbox is inside a child
-	std::array<HitBox, 8> childrenHitBox = getChildren();
-	for (int i = 0; i < childrenHitBox.size(); i++)
+	//return if not need to put into children
+	if ((leaf && data.size() < 16) || level > 8 )
 	{
-		if (childrenHitBox[i].contain(hitbox))
+		return;
+	}
+
+	//insert data to children
+	std::vector<int> bigObjects;
+	std::vector<HitBox> childrenHitBox = getChildren();
+	for (int hNum : data)
+	{
+		HitBox& dataHitbox = (*hitboxArray)[hNum];
+
+		//if size bigger than children size keep here
+		if (dataHitbox.getVolume() > area.getVolume() / 8)
+		{
+			bigObjects.push_back(hNum);
+			continue;
+		}
+
+		std::vector<int> nextChildren = getChildren(dataHitbox);
+		for (int& i : nextChildren)
 		{
 			if (children[i] == nullptr)
 			{
-				children[i] = std::make_unique<QuadTree>(QuadTree(childrenHitBox[i]));
+				this->leaf = false;
+				children[i] = std::make_unique<QuadTree>(QuadTree(childrenHitBox[i], level +1, hitboxArray));
 			}
-			children[i]->insert(hitbox);
-			return;
+			children[i]->insert(hNum);
 		}
 	}
-	
-	
-	//if hitbox doesn't fit in any child put it here
-	data.push_back(hitbox);
+	data = bigObjects;
 	return;
 }
 
 
-std::vector<HitBox*> QuadTree::getData(HitBox& hitbox)
+std::vector<int> QuadTree::getData(HitBox& hitbox)
 {
-	std::vector<HitBox*> collected_data;
+	std::vector<int> collected_data;
 	
-	//add level data if hitbox intersects
-	if (area.touch(hitbox))
-	{
-		for (auto& dataSample : data)
-		{
-			collected_data.push_back(&dataSample);
-		}
-	}
-
+	//add level data 
+	collected_data.insert(collected_data.end(), data.begin(), data.end());
+	
 	//add children data
-	for (int i = 0; i < 8; i++)
+	for (int& i : getChildren(hitbox))
 	{
 		if (children[i])
 		{
-			std::vector<HitBox*> childData = children[i]->getData(hitbox);
-			collected_data.insert(collected_data.begin(), childData.begin(), childData.end());
+			//add child data
+			std::vector<int> childData = children[i]->getData(hitbox);
+			collected_data.insert(collected_data.end(), childData.begin(), childData.end());	
 		}
 	}
 	return collected_data;
 }
 
+
+std::vector<int> QuadTree::unDupe(std::vector<HitBox>* hitboxArray, std::vector<int> dupe)
+{
+	std::vector<int> unDupe;
+	std::vector<bool> indication(0, false);
+
+	int maxValue = -1;
+	for (int& hitboxNum : dupe)
+	{
+		HitBox& hitbox = (*hitboxArray)[hitboxNum];
+		if (hitboxNum > maxValue)
+		{
+			maxValue = hitboxNum;
+			indication.resize(maxValue + 1, false);
+		}
+		if (indication[hitboxNum] == false)
+		{
+			indication[hitboxNum] = true;
+			unDupe.push_back(hitbox.triNum);
+			unDupe.push_back(hitbox.modelNum);
+		}
+	}
+	return unDupe;
+}
+
 void QuadTree::print(int level)
 {
+	
 	std::cout << "level: " << level << " ,count: " << data.size() << std::endl;
+
 	for (int i = 0; i < children.size(); i++)
 	{
 		if (children[i])
@@ -159,20 +278,21 @@ void QuadTree::print(int level)
 
 std::vector<HitBox> HitBox::convertToHitbox(std::vector<Model>& models)
 {
-	std::vector<HitBox> result;
-	for (auto& model : models)
+	std::vector<HitBox> hitboxList;
+	for (int k =0; k< models.size(); k++)
 	{
 		//create a hitbox for each triangle and load into tree
-		for (int i = 0; i < model.Indices.size() / 3; i++)
+		for (int i = 0; i < models[k].Indices.size() / 3; i++)
 		{
 			std::vector<glm::vec3> trianglePoints;
-			trianglePoints.push_back(model.getTrianglePoint(i, 0));
-			trianglePoints.push_back(model.getTrianglePoint(i, 1));
-			trianglePoints.push_back(model.getTrianglePoint(i, 2));
+			trianglePoints.push_back(models[k].getTrianglePoint(i, 0));
+			trianglePoints.push_back(models[k].getTrianglePoint(i, 1));
+			trianglePoints.push_back(models[k].getTrianglePoint(i, 2));
 			HitBox hitbox = HitBox(trianglePoints);
-			hitbox.pointer = i;
-			result.push_back(hitbox);
+			hitbox.triNum = i;
+			hitbox.modelNum = k;
+			hitboxList.push_back(hitbox);
 		}
 	}
-	return result;
+	return hitboxList;
 }
