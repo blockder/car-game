@@ -43,6 +43,25 @@ std::vector<int> Collision::collisionDetector(QuadTree& tree, RigidBody& body)
 	return triangles;
 
 }
+std::vector<int> Collision::collisionDetector(Grid& grid, RigidBody& body)
+{
+	std::vector<int> triangles;
+
+	//create hitbox for body
+	std::vector<glm::vec3> wsPoints;
+	for (auto& point : body.model.points)
+	{
+		wsPoints.push_back(body.worldSpace(point));
+	}
+	HitBox hitbox = HitBox(wsPoints);
+	hitbox.enLarge(1.5);
+	hitbox.blCorner.y -= 0.5f;
+	hitbox.height += 0.5f;
+
+	triangles = QuadTree::unDupe(grid.hitboxList, grid.getData(hitbox));
+	//std::cout << "triangles count " << triangles.size()/2 << std::endl;
+	return triangles;
+}
 void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float u)
 {
 	//calculate initial closing velocity 

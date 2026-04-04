@@ -9,6 +9,7 @@ public:
 	static void print(glm::vec3, const char* name);
 	static void print(glm::vec2 vector);
 	static void print(double num);
+	static void print(double num, const char* name);
 
 	static float setPrecision(float num, int decimalNum);
 	static glm::vec3 getNormal(glm::vec3 t1, glm::vec3 t2, glm::vec3 t3);

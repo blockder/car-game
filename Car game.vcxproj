@@ -138,6 +138,7 @@
     <ClCompile Include="Car.cpp" />
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="Grid.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Math.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -156,6 +157,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Car.h" />
     <ClInclude Include="Collision.h" />
+    <ClInclude Include="Grid.h" />
     <ClInclude Include="Model.h" />
     <ClInclude Include="QuadTree.h" />
     <ClInclude Include="Quaternion.h" />

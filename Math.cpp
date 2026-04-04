@@ -25,6 +25,10 @@ void Math::print(double num)
 {
 	std::cout << num << std::endl;
 }
+void Math::print(double num, const char* name)
+{
+	std::cout << name <<": " << num << std::endl;
+}
 float Math::setPrecision(float num, int precision)
 {
 	int tens = std::pow(10, precision);

@@ -13,6 +13,7 @@
 #include"Collision.h"
 #include"Block.h"
 #include"Spring.h"
+#include"Grid.h"
 #include"QuadTree.h"
 
 const int screenWidth = 800;
@@ -26,7 +27,7 @@ const int fps = 60;
 Spring fr, fl, br, bl, tr, tl;
 
 
-void update(Car& car, std::vector<Block>& map, QuadTree& tree);
+void update(Car& car, std::vector<Block>& map, QuadTree& tree, Grid& grid);
 void draw(Shader& shaderProgram, Car& car, std::vector<Block>& map);
 
 int main()
@@ -62,15 +63,16 @@ int main()
 	std::vector<Model> models = Model::loadModels("Models/track2.obj", "blank.png");
 
 	//create quadtree of map
-	HitBox zone = HitBox(glm::vec3(-200), 400, 400, 400);
+	HitBox mapZone = HitBox(glm::vec3(-200), 400, 400, 400);
 
 	//insert map into tree
 	std::vector<HitBox> hitboxList = HitBox::convertToHitbox(models);
 
-	QuadTree tree = QuadTree(zone, 0, &hitboxList);
+	QuadTree tree = QuadTree(mapZone, 0, &hitboxList);
 	tree.insert(hitboxList);
 	
 	//tree.print(0);
+	Grid grid = Grid(2, &hitboxList);
 	
 	
 	camera = Camera(glm::vec3(0.0f, 1.0f, -2.0f), glm::vec3(0.0f, -0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), screenWidth, screenHeight);
@@ -121,6 +123,7 @@ int main()
 	
 	Car car = Car("grid.png", carV, indices);
 	car.center = glm::vec3(0, 2, 0);
+	
 	
 	
 	
@@ -187,7 +190,7 @@ int main()
 		//enter game tick
 		if(currentTime - lastTime > 1.0/fps && !glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS)
 		{
-			update(car, map, tree);
+			update(car, map, tree, grid);
 
 			draw(renderer3D, car, map);
 			
@@ -214,7 +217,7 @@ int main()
 	glfwTerminate();
 	return -1;
 }
-void update(Car& car, std::vector<Block>& map, QuadTree& tree)
+void update(Car& car, std::vector<Block>& map, QuadTree& tree, Grid& grid)
 {
 	camera.updateMovement(window);
 	car.movement(window, 1.0 / fps);
@@ -222,7 +225,7 @@ void update(Car& car, std::vector<Block>& map, QuadTree& tree)
 	//gravity
 	car.RigidBody::addForce(glm::vec3(0, -GRAVITY, 0) / car.inverseMass);
 	
-	//get data from qudatree
+	//get data from qudatree/grid
 	std::vector<int> zone = Collision::collisionDetector(tree, car);
 	
 	//spring force
@@ -231,6 +234,7 @@ void update(Car& car, std::vector<Block>& map, QuadTree& tree)
 	bl.setTriangles(zone); bl.applyForce();
 	br.setTriangles(zone); br.applyForce();
 
+	
 	
 	car.onGround = Spring::onGround(fr, fl, br, bl);
 	

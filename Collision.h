@@ -3,6 +3,7 @@
 #include<vector>
 #include<iostream>
 #include"QuadTree.h"
+#include"Grid.h"
 
 class RigidBody;
 class Model;
@@ -35,6 +36,7 @@ public:
 	static std::vector<RigidBody*> objects;
 
 	static std::vector<int> collisionDetector(QuadTree& tree, RigidBody& body);
+	static std::vector<int> collisionDetector(Grid& grid, RigidBody& body);
 
 	static void velocityResolver(std::vector<Contact>& contacts, float c, float u);
 
