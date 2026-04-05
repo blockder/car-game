@@ -1,6 +1,8 @@
 #include"QuadTree.h"
 #include <algorithm>
 
+
+
 HitBox::HitBox(glm::vec3 blCorner, float width, float height, float depth)
 {
 	this->blCorner = blCorner;
@@ -219,19 +221,32 @@ void QuadTree::insert(int hitboxNum)
 std::vector<int> QuadTree::getData(HitBox& hitbox)
 {
 	std::vector<int> collected_data;
-	
 	//add level data 
 	collected_data.insert(collected_data.end(), data.begin(), data.end());
-	
-	//add children data
-	for (int& i : getChildren(hitbox))
+
+	//start thread for each children 
+	std::vector<std::future<std::vector<int>>> futures;
+	for (int i : getChildren(hitbox))
 	{
 		if (children[i])
 		{
-			//add child data
-			std::vector<int> childData = children[i]->getData(hitbox);
-			collected_data.insert(collected_data.end(), childData.begin(), childData.end());	
+			if (level < 1)
+			{
+				//create threads for children
+				futures.push_back(std::async(std::launch::async , &QuadTree::getData, children[i].get(), std::ref(hitbox)));
+				continue;
+			}
+			//add child data without MultiThreading
+			std::vector<int> chilData = children[i]->getData(hitbox);
+			collected_data.insert(collected_data.end(), chilData.begin(), chilData.end());
 		}
+	}
+
+	//collect data from children's threads
+	for (std::future<std::vector<int>>& future : futures)
+	{
+		std::vector<int> chilData = future.get();
+		collected_data.insert(collected_data.end(), chilData.begin(), chilData.end());
 	}
 	return collected_data;
 }

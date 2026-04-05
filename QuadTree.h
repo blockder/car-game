@@ -4,6 +4,9 @@
 #include<vector>
 #include <iostream>
 #include"Model.h"
+#include<thread>
+#include<future>
+#include<mutex>
 
 struct HitBox
 {
@@ -54,5 +57,7 @@ public:
 	void print(int level);
 
 	static std::vector<int> unDupe(std::vector<HitBox>* hitboxArray, std::vector<int> dupe);
+private:
+	
 
 };

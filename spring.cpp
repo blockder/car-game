@@ -148,6 +148,7 @@ bool Spring::makeContact(std::vector<Contact>& contacts)
 		contacts.push_back(Contact(r2, NULL, p2, glm::normalize(p1 - p2), 0));
 		return true;
 	}
+	return false;
 }
 
 
