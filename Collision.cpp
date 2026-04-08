@@ -23,7 +23,7 @@ glm::mat3 getContactTransform(glm::vec3 normal)
 	inverseRotation[0] = glm::cross(inverseRotation[2], inverseRotation[1]);
 	return glm::inverse(inverseRotation);
 }
-std::vector<int> Collision::collisionDetector(QuadTree& tree, RigidBody& body)
+std::vector<int> Collision::collisionDetector(QuadTree& tree,Grid& grid, RigidBody& body)
 {
 	std::vector<int> triangles;
 
@@ -34,35 +34,16 @@ std::vector<int> Collision::collisionDetector(QuadTree& tree, RigidBody& body)
 		wsPoints.push_back(body.worldSpace(point));
 	}
 	HitBox hitbox = HitBox(wsPoints);
-	hitbox.enLarge(1.5);
-	hitbox.blCorner.y -= 0.5f;
-	hitbox.height += 0.5f;
+	hitbox.enLarge(3);
 
 	triangles = QuadTree::unDupe(tree.hitboxArray, tree.getData(hitbox));
+	//triangles = QuadTree::unDupe(grid.hitboxList, grid.getData(hitbox));
 	//std::cout << "triangles count " << triangles.size()/2 << std::endl;
 	return triangles;
 
 }
-std::vector<int> Collision::collisionDetector(Grid& grid, RigidBody& body)
-{
-	std::vector<int> triangles;
 
-	//create hitbox for body
-	std::vector<glm::vec3> wsPoints;
-	for (auto& point : body.model.points)
-	{
-		wsPoints.push_back(body.worldSpace(point));
-	}
-	HitBox hitbox = HitBox(wsPoints);
-	hitbox.enLarge(1.5);
-	hitbox.blCorner.y -= 0.5f;
-	hitbox.height += 0.5f;
-
-	triangles = QuadTree::unDupe(grid.hitboxList, grid.getData(hitbox));
-	//std::cout << "triangles count " << triangles.size()/2 << std::endl;
-	return triangles;
-}
-void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float u)
+void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float u, float k )
 {
 	//calculate initial closing velocity 
 	//and solves the biggest one
@@ -70,8 +51,8 @@ void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float 
 		return;
 
 	float maxClosingVelocity = 99;
-	int k = 0;
-	while (maxClosingVelocity > 0.1f && k<15)
+	int n = 0;
+	while (maxClosingVelocity > 0.1f && n<15)
 	{
 		maxClosingVelocity = 0;
 		int contactNum = 0;
@@ -84,8 +65,8 @@ void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float 
 				contactNum = i;
 			}
 		}
-		contacts[contactNum].solveVelocity(c, u);
-		k++;
+		contacts[contactNum].solveVelocity(c, u, k);
+		n++;
 	}
 }
 void Collision::penetrationResolver(std::vector<Contact>& contacts)
@@ -273,7 +254,7 @@ float Contact::getClosingVelocity()
 	glm::vec3 relVelocity = other->getVelocity(point) - body->getVelocity(point);
 	return std::abs(glm::dot(relVelocity, normal));
 }
-void Contact::solveVelocity(float c, float u)
+void Contact::solveVelocity(float c, float u, float k)
 {
 	//handle one object cases
 	if (body == NULL)
@@ -300,7 +281,7 @@ void Contact::solveVelocity(float c, float u)
 	float maxFriction = u * std::abs(accumulatedNormal);
 	if (glm::length(accumulatedSide) > maxFriction)
 	{
-		accumulatedSide = glm::normalize(accumulatedSide) * maxFriction;
+		accumulatedSide = glm::normalize(accumulatedSide) * k * std::abs(accumulatedNormal);
 	}
 	
 	//return to world space

@@ -14,7 +14,6 @@ public:
 	Camera() = default;
 
 	glm::mat4 getMatrix();
-	glm::mat4 getMatrix(glm::vec3 loc, glm::vec3 direction);
 	void updateMovement(GLFWwindow* window);
 	void updateMovement(Car& car);
 

@@ -24,7 +24,7 @@ struct Contact
 
 	float getClosingVelocity();
 
-	void solveVelocity(float c, float u);
+	void solveVelocity(float c, float u, float k);
 
 	static std::vector<Contact> createContacts(RigidBody* body, RigidBody* other, std::vector<glm::vec3> points);
 };
@@ -35,10 +35,9 @@ public:
 	static RigidBody* empty;
 	static std::vector<RigidBody*> objects;
 
-	static std::vector<int> collisionDetector(QuadTree& tree, RigidBody& body);
-	static std::vector<int> collisionDetector(Grid& grid, RigidBody& body);
+	static std::vector<int> collisionDetector(QuadTree& tree,Grid& grid, RigidBody& body);
 
-	static void velocityResolver(std::vector<Contact>& contacts, float c, float u);
+	static void velocityResolver(std::vector<Contact>& contacts, float c, float u, float k);
 
 	static void penetrationResolver(std::vector<Contact>& contacts);
 

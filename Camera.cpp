@@ -22,13 +22,7 @@ glm::mat4 Camera::getMatrix()
 
 	return prespective * lookAt;
 }
-glm::mat4 Camera::getMatrix(glm::vec3 loc, glm::vec3 direction)
-{
-	glm::mat4 prespective = glm::perspective(FOV, (float)screenWidth / screenHeight, nearPlane, farPlane);
-	glm::mat4 lookAt = glm::lookAt(loc, loc + glm::normalize(direction), up);
 
-	return prespective * lookAt;
-}
 
 void Camera::updateMovement(GLFWwindow* window)
 {
@@ -85,20 +79,25 @@ void Camera::updateMovement(Car& car)
 	glm::vec3 localForward = car.rotation * glm::vec3(0, 0, 1);
 	glm::vec3 localUp = car.rotation * glm::vec3(0, 1, 0);
 
-	//update location
-	loc = car.center + glm::vec3(0,0.5,0);
-	//direction = localForward - 0.2f * localUp;
+	if (!car.onGround)
+	{
+		up = glm::vec3(0, 1, 0);
+		direction.y = 0;
+		direction = glm::normalize(direction);
 
+		//update location
+		loc = car.center + glm::vec3(0,2.0f,0);
+		loc -= direction * 2.0f;
+		direction.y = -0.3f;
+		return;
+	}
 
 	//update location and direction only if car on ground
-	if (!car.onGround)
-		return;
-
 	//update location
-	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -3.0);
+	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -2.0f);
 
 	//update Direction
 	glm::vec3 carDirection = localForward;
-	direction = carDirection -0.2f * localUp;
+	direction = carDirection -0.3f * localUp;
 	up = localUp;
 }

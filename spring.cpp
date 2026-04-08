@@ -56,12 +56,12 @@ glm::vec3 Spring::projectSpring(glm::vec3 p)
 
 		//skip if no apt intersection
 		float distanceTriangle = Math::distanceTrianglePoint(t1, t2, t3, p);
-		if (distanceTriangle <= 0.01f || distanceTriangle > 3.0f)
+		if (distanceTriangle <= 0.01f || distanceTriangle > minDistance)
 			continue;
 
 		glm::vec3 susP = Math::triangleIntersection(t1, t2, t3, normal, p);
 
-		if (glm::length(susP) > 0 && distanceTriangle < minDistance)
+		if (glm::length(susP) > 0 )
 		{
 			minDistance = distanceTriangle;
 			projectedPoint = susP;
@@ -119,7 +119,7 @@ void Spring::applyForce()
 		
 		//add dampning
 		float damping =  dampingC * closingVelocity / r1->inverseMass;
-		 r1->addForce(p1, direction * (magnitude - damping));
+		 r1->addForce(p1, direction * (magnitude ));
 
 	}
 	if (r2 != NULL)

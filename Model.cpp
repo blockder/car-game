@@ -116,7 +116,6 @@ void Model::loadModel(std::string ModelFile)
 		std::cerr << "ERROR: Could not open " << ModelFile << std::endl;
 		return;
 	}
-
 	//go through line by line and generate  vertices 
 	std::vector<glm::vec2> texCoord;
 	std::string line;
@@ -135,14 +134,23 @@ void Model::loadModel(std::string ModelFile)
 		//add Vertex
 		if (splitLine[0] == "f")
 		{
-			//triangle 1
-			this->Vertices.push_back(readFace(splitLine[1], points, texCoord));
-			this->Vertices.push_back(readFace(splitLine[2], points, texCoord));
-			this->Vertices.push_back(readFace(splitLine[3], points, texCoord));
-			//triangle 2
-			this->Vertices.push_back(readFace(splitLine[1], points, texCoord));
-			this->Vertices.push_back(readFace(splitLine[3], points, texCoord));
-			this->Vertices.push_back(readFace(splitLine[4], points, texCoord));
+			if (splitLine.size() == 5)
+			{
+				//triangle 1
+				this->Vertices.push_back(readFace(splitLine[1], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[2], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[3], points, texCoord));
+				//triangle 2
+				this->Vertices.push_back(readFace(splitLine[1], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[3], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[4], points, texCoord));
+			}
+			else if (splitLine.size() == 4)
+			{
+				this->Vertices.push_back(readFace(splitLine[1], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[2], points, texCoord));
+				this->Vertices.push_back(readFace(splitLine[3], points, texCoord));
+			}
 		}
 	}
 	//generating EBO
@@ -169,10 +177,6 @@ void Model::draw(Shader& shaderProgram)
 	//send texture to shader
 	glUniform1i(glGetUniformLocation(shaderProgram.id, "texUnit"), textureUnit);
 
-	//send lightPos to shader
-	glm::vec3 lightPos(0,100,0);
-	glUniform3fv(glGetUniformLocation(shaderProgram.id, "lightPos"), 1,glm::value_ptr(lightPos));
-
 	//draw call
 	glDrawElements(GL_TRIANGLES, Indices.size(), GL_UNSIGNED_INT, 0);
 	
@@ -184,6 +188,12 @@ void Model::draw(Shader& shaderProgram)
 void Model::draw(Shader& shaderProgram, Camera& camera)
 {
 	shaderProgram.Active();
+	//send lightPos to shader
+	glm::vec3 lightPos(50, 100, 0);
+	glUniform3fv(glGetUniformLocation(shaderProgram.id, "lightPos"), 1, glm::value_ptr(lightPos));
+
+	//send camera position
+	glUniform3fv(glGetUniformLocation(shaderProgram.id, "cameraLoc"), 1, glm::value_ptr(camera.loc));
 
 	//send camera matrix
 	glUniformMatrix4fv(glGetUniformLocation(shaderProgram.id, "cameraMatrix"), 1, GL_FALSE, glm::value_ptr(camera.getMatrix()));
