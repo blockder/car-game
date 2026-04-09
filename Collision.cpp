@@ -43,7 +43,7 @@ std::vector<int> Collision::collisionDetector(QuadTree& tree,Grid& grid, RigidBo
 
 }
 
-void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float u, float k )
+void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float k )
 {
 	//calculate initial closing velocity 
 	//and solves the biggest one
@@ -65,7 +65,7 @@ void Collision::velocityResolver(std::vector<Contact>& contacts, float c, float 
 				contactNum = i;
 			}
 		}
-		contacts[contactNum].solveVelocity(c, u, k);
+		contacts[contactNum].solveVelocity(c, k);
 		n++;
 	}
 }
@@ -74,8 +74,10 @@ void Collision::penetrationResolver(std::vector<Contact>& contacts)
 	//solves the biggest penetration
 	if (contacts.size() == 0)
 		return;
-	float maxPen = 0;
-	int contactNum = 0;
+	
+	//finding contacts to solve pen
+	std::vector<int> contactsToSolve;
+
 	for (int i = 0; i < contacts.size(); i++)
 	{
 		//handle one object cases
@@ -84,19 +86,33 @@ void Collision::penetrationResolver(std::vector<Contact>& contacts)
 		if (contacts[i].other == NULL)
 			contacts[i].other = Collision::empty;
 
-		if (contacts[i].penetration > maxPen)
+		bool foundGroup = false;
+		for (int k = 0; k < contactsToSolve.size(); k++)
 		{
-			maxPen = contacts[i].penetration;
-			contactNum = i;
+			if (glm::dot(contacts[i].normal, contacts[contactsToSolve[k]].normal) > 0.9f)
+			{
+				foundGroup = true;
+				if (contacts[i].penetration > contacts[contactsToSolve[k]].penetration)
+					contactsToSolve[k] = i;
+			}
 		}
+		if (!foundGroup)
+			contactsToSolve.push_back(i);
 	}
-	Contact& contact = contacts[contactNum];
-	glm::vec3 point = contact.point;
-	glm::vec3 normal = contact.normal;
 	
-	float adjustAmount = maxPen / (contact.body->inverseMass + contact.other->inverseMass);
-	contact.other->center +=  normal * adjustAmount * contact.other->inverseMass;
-	contact.body->center += -normal * adjustAmount * contact.body->inverseMass;
+	
+	//solve penetration
+	for(int contactNum : contactsToSolve)
+	{
+		Contact& contact = contacts[contactNum];
+		glm::vec3 point = contact.point;
+		glm::vec3 normal = contact.normal;
+		float penetration = std::max(contact.penetration  - 0.002f, 0.0f);
+
+		float adjustAmount = penetration / (contact.body->inverseMass + contact.other->inverseMass);
+		contact.other->center += normal * adjustAmount * contact.other->inverseMass;
+		contact.body->center += -normal * adjustAmount * contact.body->inverseMass;
+	}
 }
 
 bool Collision::insideBody(RigidBody& body, RigidBody& other, std::vector<Contact>& contacts)
@@ -242,6 +258,7 @@ Contact::Contact(RigidBody* body, RigidBody* other, glm::vec3 point, glm::vec3 n
 	this->penetration = penetration;
 	this->accumulatedNormal = 0;
 	this->accumulatedSide = glm::vec3(0);
+	uStatic = 0;
 }
 float Contact::getClosingVelocity()
 {
@@ -254,7 +271,7 @@ float Contact::getClosingVelocity()
 	glm::vec3 relVelocity = other->getVelocity(point) - body->getVelocity(point);
 	return std::abs(glm::dot(relVelocity, normal));
 }
-void Contact::solveVelocity(float c, float u, float k)
+void Contact::solveVelocity(float c, float k)
 {
 	//handle one object cases
 	if (body == NULL)
@@ -271,14 +288,12 @@ void Contact::solveVelocity(float c, float u, float k)
 
 	//update accumulated normal
 	float oldAccumulatedNormal = accumulatedNormal;
-	//accumulatedNormal = std::max(accumulatedNormal - relVelocity.y , 0.0f);
-	accumulatedNormal = accumulatedNormal - relVelocity.y;
-	
+	accumulatedNormal = std::max(accumulatedNormal - relVelocity.y , 0.0f);
 
 	//update accumulated side(friction)
 	glm::vec3 oldSide = accumulatedSide;
 	accumulatedSide = accumulatedSide + glm::vec3(-relVelocity.x, 0 , -relVelocity.z);
-	float maxFriction = u * std::abs(accumulatedNormal);
+	float maxFriction = uStatic * std::abs(accumulatedNormal);
 	if (glm::length(accumulatedSide) > maxFriction)
 	{
 		accumulatedSide = glm::normalize(accumulatedSide) * k * std::abs(accumulatedNormal);

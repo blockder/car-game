@@ -79,25 +79,15 @@ void Camera::updateMovement(Car& car)
 	glm::vec3 localForward = car.rotation * glm::vec3(0, 0, 1);
 	glm::vec3 localUp = car.rotation * glm::vec3(0, 1, 0);
 
-	if (!car.onGround)
-	{
-		up = glm::vec3(0, 1, 0);
-		direction.y = 0;
-		direction = glm::normalize(direction);
-
-		//update location
-		loc = car.center + glm::vec3(0,2.0f,0);
-		loc -= direction * 2.0f;
-		direction.y = -0.3f;
-		return;
-	}
-
-	//update location and direction only if car on ground
+	
 	//update location
-	loc = car.center + car.rotation * glm::vec3(0, 2.0f, -2.0f);
+	glm::vec3 target = car.center + car.rotation * glm::vec3(0, 2.0f, -2.0f);
+	glm::vec3 distance = target - loc;
+	loc += distance *  0.2f;
+
 
 	//update Direction
 	glm::vec3 carDirection = localForward;
-	direction = carDirection -0.3f * localUp;
+	direction = carDirection -0.3f * localUp + distance * 0.1f;
 	up = localUp;
 }

@@ -147,7 +147,6 @@
     <ClCompile Include="Quaternion.cpp" />
     <ClCompile Include="RigidBody.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="Spring.cpp" />
     <ClCompile Include="stb.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="Vertex.cpp" />
@@ -165,7 +164,6 @@
     <ClInclude Include="Math.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="Spring.h" />
     <ClInclude Include="Texture.h" />
     <ClInclude Include="Vertex.h" />
   </ItemGroup>
@@ -175,11 +173,6 @@
     <None Include="render3d.frag" />
     <None Include="render3d.geom" />
     <None Include="render3d.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\blank.png" />
-    <Image Include="..\..\..\..\Downloads\brick_wall.png" />
-    <Image Include="..\..\..\..\Downloads\grid.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
